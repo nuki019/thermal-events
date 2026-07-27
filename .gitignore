@@ -23,3 +23,4 @@ paper/*.fls
 paper/*.xdv
 experiments/results/
 experiments/wandb/
+.venv/
