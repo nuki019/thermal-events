@@ -21,8 +21,14 @@ def gen_variant(out_dir, mode, n_train=20, n_val=6, seed0=2000):
     rng = np.random.default_rng(999)
     os.makedirs(out_dir, exist_ok=True)
     index = []
+    if os.path.exists(os.path.join(out_dir, 'index.json')):
+        index = json.load(open(os.path.join(out_dir, 'index.json')))
+    done = {e['seq'] for e in index}
     for split, n in (('train', n_train), ('val', n_val)):
         for i in range(n):
+            sid0 = f'{split}_{i:04d}'
+            if sid0 in done:
+                continue
             seed = seed0 + (0 if split == 'train' else 70000) + i
             profile = 'mixed'
             cfg = sample_scene_cfg(rng, seed, profile)
@@ -31,7 +37,7 @@ def gen_variant(out_dir, mode, n_train=20, n_val=6, seed0=2000):
             out = ThermalScene(cfg).run(keep_radio=False)
             ev, meta = convert_frames(out['disp8'], cfg.fps, SimConfig(mode=mode),
                                       interp_k=4, interp_method='linear', agc=False)
-            sid = f'{split}_{i:04d}'
+            sid = sid0
             sdir = os.path.join(out_dir, sid)
             os.makedirs(sdir, exist_ok=True)
             np.save(os.path.join(sdir, 'frames.npy'), out['disp8'])

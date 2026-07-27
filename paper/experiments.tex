@@ -96,3 +96,24 @@ representation as the only varied factor. An external YOLOv8n anchor is
 trained on the FLIR thermal frame train split. We report COCO mAP and
 mAP@50 overall and per slice (small/large, slow/fast, low/high contrast,
 day/night, AGC-corrupted) on both STED and FLIR-STED.
+\begin{table}[t]
+\centering
+\caption{Detection results (COCO mAP / mAP@50) on FLIR-STED and STED,
+shared CenterNet detector across channels. Best per dataset in bold.}
+\label{tab:e4}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{FLIR-STED} & \multicolumn{2}{c}{STED} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+channel & mAP & mAP@50 & mAP & mAP@50 \\
+\midrule
+thermal frame & --- & --- & --- & --- \\
+event (voxel) & --- & --- & --- & --- \\
+early fusion & --- & --- & --- & --- \\
+event recurrent & --- & --- & --- & --- \\
+\midrule
+YOLOv8n frame (anchor) & --- & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
