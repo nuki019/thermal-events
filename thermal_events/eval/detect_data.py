@@ -46,10 +46,15 @@ class StedDataset(Dataset):
     """
 
     def __init__(self, root, split, channel='event', bins=5, fps=30.0,
-                 size=(480, 640), train=False, max_seqs=None):
+                 size=None, train=False, max_seqs=None):
         self.channel = channel
         self.bins = bins
         self.fps = fps
+        # infer resolution from first sequence meta if not given
+        if size is None:
+            idx0 = json.load(open(os.path.join(root, 'index.json')))
+            sc = idx0[0]['scene']
+            size = (int(sc.get('height', 480)), int(sc.get('width', 640)))
         self.H, self.W = size
         self.train = train
         idx = json.load(open(os.path.join(root, 'index.json')))
@@ -104,10 +109,14 @@ class StedChunkDataset(Dataset):
     """Sequence chunks (T_chunk consecutive frames) for recurrent training."""
 
     def __init__(self, root, split, channel='event', bins=5, fps=30.0,
-                 size=(480, 640), chunk=8, train=False, max_seqs=None):
+                 size=None, chunk=8, train=False, max_seqs=None):
         self.channel = channel
         self.bins = bins
         self.fps = fps
+        if size is None:
+            idx0 = json.load(open(os.path.join(root, 'index.json')))
+            sc = idx0[0]['scene']
+            size = (int(sc.get('height', 480)), int(sc.get('width', 640)))
         self.H, self.W = size
         self.chunk = chunk
         self.train = train

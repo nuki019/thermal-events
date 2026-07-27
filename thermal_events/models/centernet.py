@@ -109,17 +109,17 @@ def draw_gaussian(heatmap, center, radius):
 
 
 def focal_loss(pred, target):
-    """CornerNet focal. pred logits [B,C,H,W], target heatmap same shape."""
-    p = torch.sigmoid(pred)
-    pos = target.eq(1).float()
-    neg = (1 - target)
-    neg_w = (1 - target) ** 4
-    pos_loss = -torch.log(p + 1e-6) * (1 - p) ** 2 * pos
-    neg_loss = -torch.log(1 - p + 1e-6) * p ** 2 * neg_w * neg
-    n = pos.sum()
-    if n == 0:
-        return neg_loss.sum()
-    return (pos_loss.sum() + neg_loss.sum()) / n
+    """CornerNet focal (Objects as Points). pred logits [B,C,H,W], target heatmap."""
+    p = torch.sigmoid(pred).clamp(1e-4, 1 - 1e-4)
+    pos_mask = target.eq(1.0)
+    neg_mask = ~pos_mask
+    neg_weights = torch.pow(1 - target, 4)
+    pos_loss = torch.log(p) * torch.pow(1 - p, 2) * pos_mask
+    neg_loss = torch.log(1 - p) * torch.pow(p, 2) * neg_weights * neg_mask
+    num_pos = pos_mask.sum()
+    if num_pos == 0:
+        return -neg_loss.sum()
+    return -(pos_loss.sum() + neg_loss.sum()) / num_pos
 
 
 def build_targets(boxes, H, W, stride=4, max_objs=64, device='cpu'):
@@ -141,6 +141,8 @@ def build_targets(boxes, H, W, stride=4, max_objs=64, device='cpu'):
             wh[j] = torch.tensor([bw, bh], device=device)
             off[j] = torch.tensor([cx - xi, cy - yi], device=device)
             mask[j] = 1
+            # ensure the exact center is a strict positive (value exactly 1)
+            hm[0, yi, xi] = 1.0
     return hm, wh, off, ind, mask
 
 

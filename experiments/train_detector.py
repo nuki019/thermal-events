@@ -134,18 +134,18 @@ def main():
                                  train=True, chunk=args.chunk,
                                  max_seqs=args.max_train_seqs or None)
         ds_va = StedChunkDataset(args.data, 'val', args.channel, bins=args.bins, chunk=args.chunk)
-        ld_tr = DataLoader(ds_tr, batch_size=args.bs, shuffle=True, num_workers=2,
-                           collate_fn=collate_chunk, pin_memory=True, persistent_workers=True)
-        ld_va = DataLoader(ds_va, batch_size=args.bs, shuffle=False, num_workers=2,
-                           collate_fn=collate_chunk, pin_memory=True, persistent_workers=True)
+        ld_tr = DataLoader(ds_tr, batch_size=args.bs, shuffle=True, num_workers=0,
+                           collate_fn=collate_chunk, pin_memory=True)
+        ld_va = DataLoader(ds_va, batch_size=args.bs, shuffle=False, num_workers=0,
+                           collate_fn=collate_chunk, pin_memory=True)
     else:
         ds_tr = StedDataset(args.data, 'train', args.channel, bins=args.bins, train=True,
                             max_seqs=args.max_train_seqs or None)
         ds_va = StedDataset(args.data, 'val', args.channel, bins=args.bins)
-        ld_tr = DataLoader(ds_tr, batch_size=args.bs, shuffle=True, num_workers=2,
-                           collate_fn=collate, pin_memory=True, persistent_workers=True)
-        ld_va = DataLoader(ds_va, batch_size=args.bs, shuffle=False, num_workers=2,
-                           collate_fn=collate, pin_memory=True, persistent_workers=True)
+        ld_tr = DataLoader(ds_tr, batch_size=args.bs, shuffle=True, num_workers=0,
+                           collate_fn=collate, pin_memory=True)
+        ld_va = DataLoader(ds_va, batch_size=args.bs, shuffle=False, num_workers=0,
+                           collate_fn=collate, pin_memory=True)
     model = CenterNet(cin=cin, width=args.width, recurrent=args.recurrent).to(device)
     nparam = sum(p.numel() for p in model.parameters())
     print(f'model params: {nparam/1e6:.2f}M | channel {args.channel} | recurrent {args.recurrent}')
