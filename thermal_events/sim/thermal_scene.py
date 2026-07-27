@@ -133,16 +133,18 @@ class ThermalScene:
                      dT=o.dT, speed=float(np.hypot(o.vx, o.vy)))
                 for o in self.objects if o.alive]
 
-    def run(self):
+    def run(self, keep_radio=False):
         cfg = self.cfg
         T = int(round(cfg.duration_s * cfg.fps))
-        radio14 = np.zeros((T, cfg.height, cfg.width), np.float32)
+        radio14 = np.zeros((T, cfg.height, cfg.width), np.float32) if keep_radio else None
         disp8 = np.zeros((T, cfg.height, cfg.width), np.uint8)
         all_boxes = []
         dt = 1.0 / cfg.fps
         for i in range(T):
-            radio14[i] = self._apply_sensor(self._radiometric_frame(i * dt))
-            disp8[i] = self._apply_agc(radio14[i], dt)
+            q14 = self._apply_sensor(self._radiometric_frame(i * dt))
+            if keep_radio:
+                radio14[i] = q14
+            disp8[i] = self._apply_agc(q14, dt)
             all_boxes.append(self.boxes())
             self._step_objects(dt)
         return dict(radio14=radio14, disp8=disp8, boxes=all_boxes,

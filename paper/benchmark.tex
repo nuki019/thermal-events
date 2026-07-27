@@ -14,12 +14,50 @@ per frame, enabling exact slice attribution and sensitivity analysis.
 We convert the eight continuous sequences of the FLIR ADAS v2 video test
 set (3{,}145 frames, COCO labels, six retained classes) to event streams
 with the default pipeline (AGC de-flicker, $4\times$ linear interpolation,
-v2e mode). Five sequences form the train split and three the val split.
-This is, to our knowledge, the first public event-stream conversion of
-continuous FLIR video with labels.
+v2e mode), yielding 25.9 million events and 33{,}479 bounding boxes.
+Five sequences form the train split (2{,}904 frames, 31{,}102 boxes) and
+three the val split (845 frames, 2{,}377 boxes). This is, to our knowledge,
+the first public event-stream conversion of continuous FLIR video with
+labels. Table~\ref{tab:datasets} summarizes all three benchmarks.
+
+\begin{table}[t]
+\centering
+\caption{Released thermal event benchmarks.}
+\label{tab:datasets}
+\begin{tabular}{lccc}
+\toprule
+ & STED & FLIR-STED & HIT-UAV-ev \\
+\midrule
+source & synthetic & FLIR v2 video & HIT-UAV \\
+sequences & 124 & 8 & 5 \\
+frames & 22{,}320 & 3{,}145 & 1{,}923 \\
+events & --- & 25.9M & 74.6M \\
+boxes & per-frame & 33{,}479 & --- \\
+licence & MIT & code-only & CC BY 4.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{HIT-UAV events}
 The five HIT-UAV sample videos (1{,}923 frames, \SI{7.5}{\hertz}) are
 converted at $8\times$ upsampling with and without AGC de-flickering,
 providing a permissively licensed real-data anchor and the interpolation
-audit of Sec.~\ref{sec:e1}.
+audit of Sec.~\ref{sec:e1}. Fig.~\ref{fig:hit_uav} visualizes a frame
+with its raw and de-flickered event streams.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/hit_uav_events.pdf}
+\caption{HIT-UAV thermal frame (a) with its raw (b) and AGC-de-flickered
+(c) event streams (133 ms window). De-flickering removes spurious global
+background events while preserving object-edge events.}
+\label{fig:hit_uav}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/agc_gain_trace.pdf}
+\caption{Estimated AGC gain trace (top) and event-rate time series with
+and without de-flickering (bottom) on a HIT-UAV video.}
+\label{fig:agc}
+\end{figure}

@@ -24,13 +24,15 @@ def event_stats(events: dict, h: int, w: int, bin_s: float = 0.05) -> dict:
     nb = max(1, int(dur / bin_s))
     bins = np.floor((t - t.min()) / bin_s).astype(int)
     counts = np.bincount(bins, minlength=nb).astype(np.float64)
-    # spatial activity per bin (sample up to 200 bins)
+    # spatial activity per bin (subsample bins and events to bound memory)
     sparsity = []
-    step = max(1, nb // 200)
+    step = max(1, nb // 50)
     for b in range(0, nb, step):
-        m = bins == b
-        if m.sum():
-            sparsity.append(len(np.unique(y[m] * w + x[m])) / (h * w))
+        idx = np.nonzero(bins == b)[0]
+        if len(idx) > 200000:
+            idx = idx[:200000]
+        if len(idx):
+            sparsity.append(len(np.unique(y[idx].astype(np.int64) * w + x[idx])) / (h * w))
     iei = np.diff(t)
     pos_frac = float((p > 0).mean())
     return dict(

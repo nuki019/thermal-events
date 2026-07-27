@@ -28,7 +28,7 @@ def gen_variant(out_dir, mode, n_train=20, n_val=6, seed0=2000):
             cfg = sample_scene_cfg(rng, seed, profile)
             cfg.agc_drift_std = 0.0
             cfg.agc_jump_prob_per_s = 0.0
-            out = ThermalScene(cfg).run()
+            out = ThermalScene(cfg).run(keep_radio=False)
             ev, meta = convert_frames(out['disp8'], cfg.fps, SimConfig(mode=mode),
                                       interp_k=4, interp_method='linear', agc=False)
             sid = f'{split}_{i:04d}'

@@ -54,7 +54,7 @@ def main():
         if sid in done:
             continue
         import gc; gc.collect()
-        out = ThermalScene(cfg).run()
+        out = ThermalScene(cfg).run(keep_radio=False)
         sdir = os.path.join(OUT, sid)
         os.makedirs(sdir, exist_ok=True)
         np.save(os.path.join(sdir, 'frames.npy'), out['disp8'])

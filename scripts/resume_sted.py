@@ -41,7 +41,7 @@ for split, i, seed, profile, cfg, sid in cfgs:
         torch.cuda.empty_cache()
     except Exception:
         pass
-    out = ThermalScene(cfg).run()
+    out = ThermalScene(cfg).run(keep_radio=False)
     events, meta = convert_frames(out['disp8'], cfg.fps, SIM, interp_k=INTERP_K,
                                   interp_method='linear')
     sdir = os.path.join(OUT, sid)
