@@ -34,6 +34,13 @@ for split, i, seed, profile, cfg, sid in cfgs:
     if sid in done:
         continue
     print(f'generating {sid} ...', flush=True)
+    import gc
+    gc.collect()
+    try:
+        import torch
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
     out = ThermalScene(cfg).run()
     events, meta = convert_frames(out['disp8'], cfg.fps, SIM, interp_k=INTERP_K,
                                   interp_method='linear')

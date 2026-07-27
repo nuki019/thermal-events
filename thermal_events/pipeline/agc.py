@@ -30,10 +30,17 @@ def _robust_stats(frames: np.ndarray, lo_p=2.0, hi_p=98.0):
     return med.astype(np.float64), spread.astype(np.float64)
 
 
+def _medfilt1d(x: np.ndarray, win: int) -> np.ndarray:
+    """Pure-numpy median filter (odd win), edge-padded."""
+    win = int(win) | 1
+    pad = win // 2
+    xp = np.pad(x, pad, mode='edge')
+    return np.median(np.lib.stride_tricks.sliding_window_view(xp, win), axis=1)
+
+
 def _jump_robust_smooth(x: np.ndarray, win=9, alpha=0.2, jump_sigma=4.0):
     """Median filter + exponential smoothing; resets smoothing state at jumps."""
-    from scipy.signal import medfilt
-    xm = medfilt(x, kernel_size=win)
+    xm = _medfilt1d(x, win)
     out = np.empty_like(xm)
     out[0] = xm[0]
     resid = xm - np.concatenate([[xm[0]], xm[:-1]])
