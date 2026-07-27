@@ -78,13 +78,13 @@ class EventSim:
                 ys.append(torch.randint(0, self.h, (n_leak,), device=self.dev))
                 ps.append((torch.randint(0, 2, (n_leak,), device=self.dev) * 2 - 1).to(torch.int8))
         if ts:
-            t = torch.cat(ts).cpu().numpy().astype(np.float64)
+            t = torch.cat(ts).cpu().numpy().astype(np.float32)
             x = torch.cat(xs).cpu().numpy().astype(np.uint16)
             y = torch.cat(ys).cpu().numpy().astype(np.uint16)
             p = torch.cat(ps).cpu().numpy().astype(np.int8)
             order = np.argsort(t, kind='stable')
             return dict(t=t[order], x=x[order], y=y[order], p=p[order])
-        return dict(t=np.empty(0), x=np.empty(0, np.uint16),
+        return dict(t=np.empty(0, np.float32), x=np.empty(0, np.uint16),
                     y=np.empty(0, np.uint16), p=np.empty(0, np.int8))
 
     @torch.no_grad()

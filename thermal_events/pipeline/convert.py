@@ -41,6 +41,11 @@ def convert_frames(frames_u8: np.ndarray, fps_in: float, sim_cfg: SimConfig,
             all_ev.append(ev)
             metas.append(meta)
             pos = end if end == T else end - 1
+            try:
+                import torch
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
         # shift timestamps by chunk starts
         t_shift = 0.0
         shifted = []
@@ -92,8 +97,10 @@ def _convert_segment(frames_u8, fps_in, sim_cfg, interp_k, interp_method,
 
 
 def save_events(path: str, events: dict, meta: dict):
+    """Memory-safe save: float32 timestamps, zip64, chunked compression."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    np.savez_compressed(path, t=events['t'], x=events['x'], y=events['y'],
+    t = events['t'].astype(np.float32, copy=False)
+    np.savez_compressed(path, t=t, x=events['x'], y=events['y'],
                         p=events['p'], meta=json.dumps(meta))
 
 

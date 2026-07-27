@@ -1,0 +1,51 @@
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\paragraph{Simulator-conditional claims}
+Following~\cite{stoffregen2020sim2real}, we do not equate synthetic event
+performance with real sensor performance. Our detection deltas between
+channels are robust \emph{within} the simulator family we study, and we
+report sensitivity bands to indicate which conclusions survive parameter
+perturbation. When FENCE-class hardware data becomes public, FLIR-STED and
+our pipeline are positioned as the ready-made comparison baseline.
+
+\paragraph{Interpolation in the thermal domain}
+The failure of flow-guided interpolation (E1) matters beyond our pipeline:
+most event simulators inherit visible-light interpolation assumptions. At
+low source frame rates and under AGC flicker, brightness constancy is
+violated; simple linear blending is safer. Learned interpolators trained on
+visible light should be re-audited before thermal use.
+
+\paragraph{Data licensing}
+HIT-UAV is CC BY 4.0 and can be redistributed directly. FLIR ADAS v2 is
+form-gated; we therefore release conversion code, configurations, and
+checksums rather than re-hosting FLIR-derived events, and we publish the
+HIT-UAV-derived events directly. KAIST (CC BY-NC-SA) conversions can be
+shared under the same licence for academic use.
+
+\paragraph{Realism of the scene model}
+Our synthetic scenes are deliberately simple (blobs on drifting textured
+backgrounds) so that physics parameters are exactly known for the fidelity
+study; they are not a replacement for real thermal texture. The detection
+conclusions that rely on realism are therefore anchored on FLIR-STED
+(real thermal video), with STED used for controlled parameter studies.
+
+\paragraph{Class collapse}
+We keep six FLIR classes and one synthetic object class to keep the study
+focused on modality rather than taxonomy; extending to the full FLIR class
+set is straightforward.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Event-based infrared hardware is arriving before any public thermal event
+data exists. We have built the first open thermal-to-event conversion
+pipeline with thermal-specific AGC de-flickering and bolometer-physics
+simulation modes, released the first synthetic and FLIR-derived thermal
+event detection benchmarks, and mapped the simulator parameter space with
+sensitivity bands. Our three-channel detection study with scene slicing
+quantifies where the event channel adds value over thermal frames, and our
+interpolation audit warns that visible-light sim-to-real practice does not
+transfer unchanged. We position this as a pre-hardware algorithm study:
+when event-based infrared cameras ship, the algorithms community should not
+start from zero.

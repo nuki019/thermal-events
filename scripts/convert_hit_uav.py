@@ -39,14 +39,15 @@ if __name__ == '__main__':
         frames, fps = load_video_gray(os.path.join(vdir, vf))
         fps = 7.5
         H, W = frames.shape[1:]
-        fl_before = flicker_index(frames.astype(np.float32))
+        fl_before = flicker_index(frames[::4].astype(np.float32))
         norm, diag = agc_normalize(frames, smooth=True)
-        fl_after = flicker_index((norm * 255).astype(np.float32))
+        fl_after = flicker_index((norm[::4] * 255).astype(np.float32))
+        del norm
         for agc_on in (False, True):
             sc = SimConfig(mode='v2e')
             t0 = time.time()
             ev, meta = convert_frames(frames, fps, sc, interp_k=8, interp_method='linear',
-                                      agc=agc_on, agc_smooth=True, chunk_s=30.0)
+                                      agc=agc_on, agc_smooth=True, chunk_s=10.0)
             st = event_stats(ev, H, W)
             eea = edge_event_alignment(ev, frames, fps)
             tag = 'agc' if agc_on else 'raw'

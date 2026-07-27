@@ -1,0 +1,64 @@
+\section{Method}
+\label{sec:method}
+
+Our pipeline converts thermal-infrared video into event streams through four
+stages (Fig.~\ref{fig:pipeline}): (i) radiometric-to-display audit and AGC
+de-flickering, (ii) temporal interpolation, (iii) threshold-crossing event
+generation with hardware-specific noise models, and (iv) packaging with
+label alignment. Each stage exposes thermal-specific parameters that we
+study systematically in Sec.~\ref{sec:fidelity}.
+
+\subsection{AGC de-flickering}
+\label{sec:agc}
+Uncooled thermal cameras apply automatic gain control (AGC) that continuously
+re-maps the radiometric signal to the display range. Frame-to-frame AGC drift
+and abrupt re-ranging events create \emph{global} photometric flicker that, fed
+into a threshold-crossing event simulator, produces scene-wide spurious events
+that drown genuine motion signal. This effect is documented in real thermal
+video by ``Thermal is Always Wild''~\cite{thermalwild2026} and makes AGC
+handling a contribution rather than an engineering detail.
+
+We model per-frame AGC as a scalar gain about a photometric pivot,
+$\mathrm{disp} = g\,(q - \mathrm{piv}) + \mathrm{piv}$, where the pivot
+(histogram middle for typical thermal AGC) is pinned. We estimate
+$\mathrm{piv}$ as the temporal median of per-frame medians, fit $g$ per frame
+by least squares on pivot-relative deviations of a dense percentile profile
+(21 levels), and invert. Single-parameter pivot-centred correction keeps
+bulk near-pivot pixels---which dominate real scenes---pinned even under
+gain-estimation noise, avoiding correction-induced event floods that naive
+two-parameter affine correction produces (Sec.~\ref{sec:fidelity}). The
+correction is gated off when no significant gain variation is detected. On
+synthetic scenes with known ground truth, our de-flicker recovers the
+radiometric event-count floor \emph{exactly}.
+
+\subsection{Temporal interpolation}
+\label{sec:interp}
+Threshold-crossing simulators require high temporal sampling; thermal sources
+range from \SI{7.5}{\hertz} (HIT-UAV) to \SI{30}{\hertz} (FLIR). We compare
+linear blending, cubic (Catmull--Rom), and optical-flow-guided bidirectional
+warping (Farneb\"ack~\cite{farneback2003}) under held-out reconstruction.
+Contrary to visible-light practice, learned or flow-guided interpolation does
+\emph{not} help on thermal video at these rates (Sec.~\ref{sec:e1}); we
+therefore default to linear interpolation, an E1 finding of independent
+interest.
+
+\subsection{Event generation with thermal physics}
+\label{sec:sim}
+Our simulator implements three modes on a shared backend:
+(i) \textbf{v2e}---classic threshold crossing with per-pixel threshold
+mismatch, log-domain shot noise, refractory period and leak
+events~\cite{hu2021v2e}; (ii) \textbf{volt}---DVS-Voltmeter-style Brownian
+threshold random walk~\cite{lin2022voltmeter}; and (iii)
+\textbf{poisson}---an uncooled Poisson-bolometer model in which event
+emission is an inhomogeneous Poisson process whose rate grows exponentially
+with log-intensity overdrive, emulating spintronic stochastic-switching LWIR
+pixels~\cite{mousa2026poisson}. Thermal physics enters through (a) an
+optional first-order low-pass on log intensity emulating the microbolometer
+time constant (ADV2E-style~\cite{jiang2024adv2e}), and (b) a
+threshold$\leftrightarrow$NETD mapping obtained by calibrating event yield
+inside known object boxes (Sec.~\ref{sec:calibration}).
+
+\subsection{Output packaging}
+Events are stored as compressed $(t,x,y,p)$ streams (float32 timestamps),
+with labels aligned to source frame times by nearest-frame association
+following the Prophesee protocol~\cite{propheseetoolbox}.

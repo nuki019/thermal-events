@@ -8,27 +8,34 @@
 \usepackage{siunitx}
 \usepackage{subcaption}
 \usepackage{xcolor}
-\title{Toward Synthetic Thermal Event Cameras:\A Sensor-Physics-Aware Conversion Pipeline and\Detection Benchmark for the Pre-Hardware Era}
+\title{Toward Synthetic Thermal Event Cameras:\\
+A Sensor-Physics-Aware Conversion Pipeline and\\
+Detection Benchmark for the Pre-Hardware Era}
 \author{Anonymous}
 \begin{document}
 \maketitle
 \begin{abstract}
-Event-based infrared focal planes are arriving (DARPA FENCE; a 2026 event-based MWIR demonstration; uncooled Poisson-bolometer LWIR pixels), yet no public thermal event data---real or synthetic---exists. We present the first open-source pipeline converting thermal-infrared video to event streams with sensor-physics-aware simulation: pivot-centered AGC de-flickering, temporal interpolation audited for the thermal domain, and three simulation modes including a Poisson-bolometer switching model. We release STED, a synthetic thermal event detection benchmark with ground-truth physics parameters, and convert real UAV thermal video (HIT-UAV) as a real-data anchor. Experiments cover interpolation fidelity, event statistics, simulator parameter sensitivity, and detection across frame/event/fusion channels with scene slicing. All findings are framed as simulator-conditional pre-hardware algorithm studies.
+Event-based infrared focal planes are arriving (DARPA FENCE; a 2026
+event-based MWIR demonstration; uncooled Poisson-bolometer LWIR pixels),
+yet no public thermal event data---real or synthetic---exists. We present
+the first open-source pipeline converting thermal-infrared video to event
+streams with sensor-physics-aware simulation: pivot-centred AGC
+de-flickering, temporal interpolation audited for the thermal domain, and
+three simulation modes including a Poisson-bolometer switching model. We
+release STED, a synthetic thermal event detection benchmark with
+ground-truth physics parameters, and FLIR-STED, the first event-stream
+conversion of continuous FLIR ADAS video with COCO labels, alongside
+HIT-UAV event conversions. Experiments cover interpolation fidelity, event
+statistics, simulator parameter sensitivity, and three-channel detection
+(frame/event/fusion) with scene slicing. All findings are framed as
+simulator-conditional pre-hardware algorithm studies.
 \end{abstract}
-\section{Introduction}
-Event cameras \ldots
-\section{Related Work}
-\ldots
-\section{Method}
-\ldots
-\section{The STED Benchmark}
-\ldots
-\section{Experiments}
-\ldots
-\section{Discussion and Limitations}
-\ldots
-\section{Conclusion}
-\ldots
+\input{intro}
+\input{related}
+\input{method}
+\input{benchmark}
+\input{experiments}
+\input{discussion}
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
 \end{document}

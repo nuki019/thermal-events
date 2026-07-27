@@ -1,0 +1,25 @@
+\section{Benchmarks}
+\label{sec:benchmark}
+
+\subsection{STED: synthetic thermal event detection}
+STED comprises 124 six-second $640{\times}480$ \SI{30}{\hertz} sequences
+(100 train / 24 val) from our scene model with randomized illumination
+(day/night), object count/size/speed/contrast, microbolometer time
+constant, NETD, PRNU, and AGC regime (one quarter of sequences with strong
+AGC corruption). Ground-truth boxes and full physics parameters are stored
+per frame, enabling exact slice attribution and sensitivity analysis.
+
+\subsection{FLIR-STED: real thermal video events}
+\label{sec:flirsted}
+We convert the eight continuous sequences of the FLIR ADAS v2 video test
+set (3{,}145 frames, COCO labels, six retained classes) to event streams
+with the default pipeline (AGC de-flicker, $4\times$ linear interpolation,
+v2e mode). Five sequences form the train split and three the val split.
+This is, to our knowledge, the first public event-stream conversion of
+continuous FLIR video with labels.
+
+\subsection{HIT-UAV events}
+The five HIT-UAV sample videos (1{,}923 frames, \SI{7.5}{\hertz}) are
+converted at $8\times$ upsampling with and without AGC de-flickering,
+providing a permissively licensed real-data anchor and the interpolation
+audit of Sec.~\ref{sec:e1}.

@@ -1,0 +1,55 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Event-based infrared hardware}
+The DARPA FENCE programme funds event-based infrared focal plane arrays with
+embedded neuromorphic processing below 1.5\,W~\cite{fence}. Raytheon
+demonstrated a first-of-its-kind event-based MWIR camera in April 2026 in
+ground-vehicle, aircraft, and live-fire scenes~\cite{raytheon2026}. On the
+device side, uncooled Poisson-bolometer LWIR pixels based on spintronic
+stochastic switching achieve nanosecond response at sub-\si{\micro\watt}
+power~\cite{mousa2026poisson}, and neural-bolometer architectures embed
+in-pixel neuromorphic compute~\cite{neuralbolometers2026}. None of these
+efforts has released data.
+
+\subsection{Novelty audit}
+We systematically checked for existing thermal event data as of July 2026.
+EVIF~\cite{geng2024evif} pairs \emph{visible} DAVIS346 events with thermal
+frames and synthesizes events only from the visible channel.
+DVS-PedX~\cite{sakhai2026dvspedx} converts JAAD \emph{RGB} driving video
+with v2e---the methodological precedent for our work, but explicitly
+visible-light. SEVD~\cite{sevd} renders synthetic visible multi-view events
+in CARLA. The CVPR EventVision 2025 workshop accepted zero
+thermal/infrared papers, and the PBVS thermal workshop has no event track.
+A patent on event-based thermal camera systems exists~\cite{wo2022patent}
+but does not affect publication. To our knowledge, ours is the first public
+synthetic thermal event stream data and benchmark.
+
+\subsection{Event simulators}
+ESIM~\cite{rebecq2018esim} introduced adaptive rendering; vid2e/v2e
+established recycling annotated video with realistic noise
+models~\cite{gehrig2020vid2e,hu2021v2e}; DVS-Voltmeter models Brownian
+threshold processes~\cite{lin2022voltmeter}; ADV2E decouples analog pixel
+filtering from source frame rate~\cite{jiang2024adv2e}; PECS adds physical
+optics and multispectral rendering~\cite{han2024pecs}; V2CE learns the
+mapping~\cite{zhang2024v2ce}; V2V outputs voxels directly~\cite{lou2025v2v}.
+All target visible-light DVS statistics; none models microbolometer
+physics or AGC.
+
+\subsection{Event-based detection}
+RED~\cite{perot2020red} and RVT~\cite{gehrig2023rvt} set the recurrent
+standard; SAST~\cite{peng2024sast}, state-space models~\cite{zubic2024ssm},
+and label-efficient LEOD~\cite{wu2024leod} extend it. Thermal-frame
+detection is comparatively mature (e.g.\ FLIR
+benchmarks~\cite{fliradas}). Cross-modal sim-to-real gaps are documented
+by~\cite{stoffregen2020sim2real}, and event fidelity can be scored by
+EQS~\cite{chanda2025eqs}. We build on these baselines and metrics while
+isolating the \emph{input modality} as the experimental variable.
+
+\subsection{Thermal datasets}
+KAIST~\cite{hwang2015kaist} provides aligned visible--thermal street video;
+FLIR ADAS v2~\cite{fliradas} provides annotated thermal driving frames and,
+critically for us, a continuous video test set; HIT-UAV~\cite{suo2023hituav}
+provides UAV thermal imagery under a permissive licence;
+LLVIP~\cite{jia2021llvip} and BIRDSAI~\cite{bondi2020birdsai} cover
+surveillance and aerial thermal video. None provides events.

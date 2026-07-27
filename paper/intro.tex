@@ -1,0 +1,61 @@
+\section{Introduction}
+\label{sec:intro}
+
+Event cameras report per-pixel logarithmic brightness changes with
+microsecond latency, high dynamic range, and sparse output, and have
+transformed visible-light high-speed and low-light
+vision~\cite{rebecq2018esim,gehrig2020vid2e}. The same advantages are
+compelling in the thermal infrared, where \emph{event-based} sensing would
+additionally remove the frame-rate bottleneck imposed by microbolometer
+time constants. Event-based infrared hardware is now arriving: the DARPA
+FENCE programme targets event-based infrared focal plane arrays with
+embedded neuromorphic processing at $<$1.5\,W~\cite{fence}; Raytheon
+demonstrated the first event-based MWIR camera in April
+2026~\cite{raytheon2026}; and uncooled Poisson-bolometer LWIR pixels with
+nanosecond switching have been reported~\cite{mousa2026poisson,neuralbolometers2026}.
+
+Yet \emph{no public thermal event dataset---real or synthetic---exists}. Our
+novelty audit (Sec.~\ref{sec:related}) confirms that every nearby candidate
+is either visible-light-only (EVIF~\cite{geng2024evif},
+DVS-PedX~\cite{sakhai2026dvspedx}, SEVD~\cite{sevd}) or hardware
+demonstrations without data release~\cite{raytheon2026,mousa2026poisson}.
+This creates an algorithm vacuum precisely when hardware is about to
+arrive: detection and tracking methods that will run on thermal event
+cameras cannot be developed or benchmarked today.
+
+We close this gap with a \emph{pre-hardware algorithm study}. Following the
+``recycle annotated video'' template established for visible light by
+vid2e~\cite{gehrig2020vid2e} and v2e~\cite{hu2021v2e}, and recently
+mainstreamed by DVS-PedX~\cite{sakhai2026dvspedx}, we convert public
+thermal-infrared video into synthetic thermal event streams. Thermal video,
+however, is not visible-light video in a different colour map: it carries
+AGC flicker, microbolometer temporal lag, NETD-limited contrast, and
+radiometric quantization. Our central observation is that
+\emph{thermal-specific preprocessing and sensor-physics parameterization are
+first-class contributions}, not implementation details.
+
+\paragraph{Contributions}
+\begin{itemize}
+  \item[\textbf{C1}] The first open-source thermal-infrared\,$\to$\,event
+  conversion pipeline, with pivot-centred AGC de-flickering that provably
+  recovers the radiometric event floor and a
+  threshold$\leftrightarrow$NETD calibration.
+  \item[\textbf{C2}] \textbf{STED}, a synthetic thermal event detection
+  benchmark with ground-truth physics parameters, and \textbf{FLIR-STED},
+  the first event-stream conversion of continuous FLIR ADAS video with
+  COCO labels---together the first public thermal event detection data.
+  \item[\textbf{C3}] A fidelity study across simulator modes and
+  parameters, including an interpolation audit showing that flow-guided
+  interpolation does \emph{not} transfer to thermal video, and a
+  sensitivity band analysis rather than single-point conclusions.
+  \item[\textbf{C4}] Three-channel detection baselines (thermal frame,
+  thermal event, early fusion) with scene slicing (day/night, motion
+  magnitude, target size, contrast), quantifying where the event channel
+  helps.
+\end{itemize}
+
+All conclusions are stated as \emph{simulator-conditional}: we do not claim
+that synthetic results equal real sensor performance, and we explicitly
+bound the sim-to-real gap following the lessons
+of~\cite{stoffregen2020sim2real}. Code, configs, and the FLIR-STED event
+streams are released; source video remains subject to its original licences.

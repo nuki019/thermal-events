@@ -88,13 +88,18 @@ def agc_normalize(frames_u8: np.ndarray, win=5, alpha=0.35, smooth=False,
         norm = f
         gain = np.ones_like(gain)
     else:
-        norm = piv + (f - piv) / np.maximum(gain[:, None, None], 1e-3)
+        norm = f
+        g32 = np.maximum(gain, 1e-3).astype(np.float32)
+        np.subtract(norm, np.float32(piv), out=norm)
+        norm /= g32[:, None, None]
+        norm += np.float32(piv)
     # Keep the corrected sequence in the *natural* mid display range of the
     # reference profile. Do NOT re-stretch to [0,1]: stretching pushes the
     # scene toward zero where the event simulator's log mapping is
     # hyper-sensitive (dlogI = dI/I), flooding the stream with noise events.
-    norm = np.clip(norm, 2.0, 253.0) / 255.0
-    return norm.astype(np.float32), dict(gain=gain, pivot=piv, ref=ref, percentiles=P)
+    np.clip(norm, 2.0, 253.0, out=norm)
+    norm /= np.float32(255.0)
+    return norm, dict(gain=gain, pivot=piv, ref=ref, percentiles=P)
 
 
 def flicker_index(frames: np.ndarray) -> float:
