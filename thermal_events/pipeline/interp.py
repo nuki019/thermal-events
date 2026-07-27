@@ -18,16 +18,16 @@ import cv2
 
 def _linear(frames: np.ndarray, k: int) -> np.ndarray:
     T, H, W = frames.shape
-    out = np.empty(((T - 1) * k + 1, H, W), np.float32)
+    out = np.empty(((T - 1) * k + 1, H, W), np.uint8)
     out[0] = frames[0]
     for i in range(T - 1):
         a = frames[i].astype(np.float32)
         b = frames[i + 1].astype(np.float32)
         for j in range(k):
             t = j / k
-            out[i * k + j] = (1 - t) * a + t * b
+            out[i * k + j] = ((1 - t) * a + t * b).clip(0, 255).astype(np.uint8)
     out[-1] = frames[-1]
-    return np.clip(out, 0, 255).astype(np.uint8)
+    return out
 
 
 def _cubic(frames: np.ndarray, k: int) -> np.ndarray:

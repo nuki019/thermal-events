@@ -46,7 +46,7 @@ if __name__ == '__main__':
             sc = SimConfig(mode='v2e')
             t0 = time.time()
             ev, meta = convert_frames(frames, fps, sc, interp_k=8, interp_method='linear',
-                                      agc=agc_on, agc_smooth=True)
+                                      agc=agc_on, agc_smooth=True, chunk_s=30.0)
             st = event_stats(ev, H, W)
             eea = edge_event_alignment(ev, frames, fps)
             tag = 'agc' if agc_on else 'raw'

@@ -36,7 +36,7 @@ class SimConfig:
 
 
 class EventSim:
-    def __init__(self, cfg: SimConfig, h: int, w: int):
+    def __init__(self, cfg: SimConfig, h: int, w: int, max_events_per_step: int = 2_000_000):
         self.cfg = cfg
         self.h, self.w = h, w
         dev = cfg.device if torch.cuda.is_available() else 'cpu'
@@ -45,14 +45,19 @@ class EventSim:
         self.th_on_map = (cfg.th_on * (1.0 + cfg.sigma_th * torch.randn(h, w, generator=g))).clamp(0.01).to(self.dev)
         self.th_off_map = (cfg.th_off * (1.0 + cfg.sigma_th * torch.randn(h, w, generator=g))).clamp(0.01).to(self.dev)
         self.Lref = torch.zeros(h, w, device=self.dev)
+        self.Lprev = None
+        self.Lsmooth = None
         self.last_t = torch.full((h, w), -1e9, device=self.dev)
         self.initialized = False
+        self.max_events_per_step = max_events_per_step
 
     def _log(self, frames: torch.Tensor) -> torch.Tensor:
         return torch.log(frames.clamp_min(1e-3) + 1e-3)
 
     def reset(self):
         self.initialized = False
+        self.Lprev = None
+        self.Lsmooth = None
         self.last_t.fill_(-1e9)
 
     @torch.no_grad()
@@ -60,28 +65,63 @@ class EventSim:
         """frames_u8: [T,H,W] uint8 at fps_in. Returns events dict of numpy arrays."""
         cfg = self.cfg
         T, H, W = frames_u8.shape
+        dt = 1.0 / fps_in
+        ts, xs, ys, ps = [], [], [], []
+        step = 60
+        for s0 in range(0, T, step):
+            self._run_block(frames_u8[s0:s0 + step], s0 * dt, dt, ts, xs, ys, ps)
+        if cfg.leak_rate_hz > 0:
+            n_leak = int(cfg.leak_rate_hz * self.h * self.w * T * dt)
+            if n_leak > 0:
+                ts.append(torch.rand(n_leak, device=self.dev) * (T * dt))
+                xs.append(torch.randint(0, self.w, (n_leak,), device=self.dev))
+                ys.append(torch.randint(0, self.h, (n_leak,), device=self.dev))
+                ps.append((torch.randint(0, 2, (n_leak,), device=self.dev) * 2 - 1).to(torch.int8))
+        if ts:
+            t = torch.cat(ts).cpu().numpy().astype(np.float64)
+            x = torch.cat(xs).cpu().numpy().astype(np.uint16)
+            y = torch.cat(ys).cpu().numpy().astype(np.uint16)
+            p = torch.cat(ps).cpu().numpy().astype(np.int8)
+            order = np.argsort(t, kind='stable')
+            return dict(t=t[order], x=x[order], y=y[order], p=p[order])
+        return dict(t=np.empty(0), x=np.empty(0, np.uint16),
+                    y=np.empty(0, np.uint16), p=np.empty(0, np.int8))
+
+    @torch.no_grad()
+    def _run_block(self, frames_u8: np.ndarray, t_block0: float, dt: float,
+                   ts, xs, ys, ps):
+        cfg = self.cfg
+        T = frames_u8.shape[0]
         frames = torch.from_numpy(frames_u8).to(self.dev).float() / 255.0
         L = self._log(frames)
-        dt = 1.0 / fps_in
         if cfg.lp_cutoff_hz > 0:
             a = 1.0 - float(np.exp(-2.0 * np.pi * cfg.lp_cutoff_hz * dt))
             Ls = torch.empty_like(L)
-            Ls[0] = L[0]
-            for i in range(1, T):
-                Ls[i] = Ls[i - 1] + a * (L[i] - Ls[i - 1])
+            start = 1
+            if self.Lsmooth is not None:
+                start = 0
+            for i in range(start, T):
+                prev = Ls[i - 1] if i > 0 else self.Lsmooth
+                Ls[i] = prev + a * (L[i] - prev)
+            if start == 1:
+                Ls[0] = L[0] if self.Lsmooth is None else self.Lsmooth + a * (L[0] - self.Lsmooth)
+            self.Lsmooth = Ls[-1].clone()
             L = Ls
         if cfg.shot_noise > 0:
             std = cfg.shot_noise * (1.0 + (0.5 - frames).abs())
             L = L + torch.randn_like(L) * std
-
-        ts, xs, ys, ps = [], [], [], []
+        del frames
         if not self.initialized:
             self.Lref = L[0].clone()
             self.initialized = True
-        Lprev = L[0]
-        for i in range(1, T):
+        if self.Lprev is None:
+            self.Lprev = L[0]
+            start_i = 1
+        else:
+            start_i = 0
+        for i in range(start_i, T):
             Lnew = L[i]
-            t_prev = (i - 1) * dt
+            t_prev = t_block0 + (i - 1) * dt if i > 0 else t_block0 - dt
             d = Lnew - self.Lref
             if cfg.mode == 'volt':
                 self.th_on_map = (self.th_on_map + cfg.volt_drift * torch.randn_like(self.th_on_map)).clamp(0.01)
@@ -104,6 +144,12 @@ class EventSim:
                 tot = int(nmap.sum().item())
                 if tot == 0:
                     continue
+                if tot > self.max_events_per_step:
+                    scale = self.max_events_per_step / tot
+                    nmap = torch.floor(nmap * scale)
+                    tot = int(nmap.sum().item())
+                    if tot == 0:
+                        continue
                 yy, xx = torch.nonzero(nmap > 0, as_tuple=True)
                 counts = nmap[yy, xx].long()
                 rep_y = torch.repeat_interleave(yy, counts)
@@ -119,23 +165,8 @@ class EventSim:
             if cfg.mode == 'poisson':
                 self.Lref = torch.where(fired, Lnew, self.Lref)
             self.last_t = torch.where(fired, torch.full_like(self.last_t, t_prev), self.last_t)
-            Lprev = Lnew
-        if cfg.leak_rate_hz > 0:
-            n_leak = int(cfg.leak_rate_hz * self.h * self.w * T * dt)
-            if n_leak > 0:
-                ts.append(torch.rand(n_leak, device=self.dev) * (T * dt))
-                xs.append(torch.randint(0, self.w, (n_leak,), device=self.dev))
-                ys.append(torch.randint(0, self.h, (n_leak,), device=self.dev))
-                ps.append((torch.randint(0, 2, (n_leak,), device=self.dev) * 2 - 1).to(torch.int8))
-        if ts:
-            t = torch.cat(ts).cpu().numpy().astype(np.float64)
-            x = torch.cat(xs).cpu().numpy().astype(np.uint16)
-            y = torch.cat(ys).cpu().numpy().astype(np.uint16)
-            p = torch.cat(ps).cpu().numpy().astype(np.int8)
-            order = np.argsort(t)
-            return dict(t=t[order], x=x[order], y=y[order], p=p[order])
-        return dict(t=np.empty(0), x=np.empty(0, np.uint16),
-                    y=np.empty(0, np.uint16), p=np.empty(0, np.int8))
+            self.Lprev = Lnew
+        del L
 
 
 def voxel_grid(events: dict, h: int, w: int, bins: int, t_start: float, t_end: float) -> np.ndarray:

@@ -67,8 +67,14 @@ def agc_normalize(frames_u8: np.ndarray, win=5, alpha=0.35, smooth=False,
     """
     f = frames_u8.astype(np.float32)
     T = f.shape[0]
+    # percentile profile via subsampled pixels (bounded memory on long videos)
+    max_pix = 40000
+    flat = f.reshape(T, -1)
+    if flat.shape[1] > max_pix:
+        cols = np.linspace(0, flat.shape[1] - 1, max_pix).astype(np.int64)
+        flat = flat[:, cols]
     qs = list(np.linspace(2, 98, 21))
-    P = np.percentile(f.reshape(T, -1), qs, axis=1)          # [21,T]
+    P = np.percentile(flat, qs, axis=1)                        # [21,T]
     ref = np.median(P, axis=1)                               # [21]
     piv = float(np.median(P[len(qs) // 2]))
     a = ref - piv                                            # [21]
