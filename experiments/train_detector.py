@@ -46,7 +46,7 @@ def run_epoch_seq(model, loader, opt, scaler, device, stride=4):
 
 
 @torch.no_grad()
-def evaluate_seq(model, loader, device, stride=4, thresh=0.3):
+def evaluate_seq(model, loader, device, stride=4, thresh=0.2):
     """Recurrent eval: run full sequences in order, carrying state."""
     model.eval()
     preds, gts, attrs_all = [], [], []
@@ -56,7 +56,7 @@ def evaluate_seq(model, loader, device, stride=4, thresh=0.3):
             xs = xs.to(device)
             with torch.autocast('cuda'):
                 out, state = model(xs, state)
-            dets = decode(out, stride=stride, thresh=thresh)
+            dets = decode({k: v.float() for k, v in out.items()}, stride=stride, thresh=thresh)
             for b, bb in enumerate(boxes_list):
                 xyxy = torch.stack([bb[:, 0] - bb[:, 2] / 2, bb[:, 1] - bb[:, 3] / 2,
                                     bb[:, 0] + bb[:, 2] / 2, bb[:, 1] + bb[:, 3] / 2], 1).numpy()
@@ -94,13 +94,13 @@ def run_epoch(model, loader, opt, scaler, device, train=True, stride=4):
 
 
 @torch.no_grad()
-def evaluate(model, loader, device, stride=4, thresh=0.3, max_batches=None):
+def evaluate(model, loader, device, stride=4, thresh=0.2, max_batches=None):
     model.eval()
     preds, gts, attrs_all = [], [], []
     for bi, (xs, boxes_list, _, attrs) in enumerate(loader):
         xs = xs.to(device)
         out, _ = model(xs)
-        dets = decode(out, stride=stride, thresh=thresh)
+        dets = decode({k: v.float() for k, v in out.items()}, stride=stride, thresh=thresh)
         for b, bb in enumerate(boxes_list):
             xyxy = torch.stack([bb[:, 0] - bb[:, 2] / 2, bb[:, 1] - bb[:, 3] / 2,
                                 bb[:, 0] + bb[:, 2] / 2, bb[:, 1] + bb[:, 3] / 2], 1).numpy()
@@ -168,14 +168,14 @@ def main():
         else:
             tr = run_epoch(model, ld_tr, opt, scaler, device, train=True)
             sched.step()
-            preds, gts, _ = evaluate(model, ld_va, device, max_batches=40)
+            preds, gts, _ = evaluate(model, ld_va, device, max_batches=None)
         r = compute_map(preds, gts)
         dt = time.time() - t0
         print(f'ep {ep}: loss {tr["loss"]:.4f} (hm {tr["hm"]:.4f} wh {tr["wh"]:.3f} off {tr["off"]:.3f}) '
               f'| val mAP {r["mAP"]:.4f} mAP50 {r["mAP50"]:.4f} | {dt:.0f}s', flush=True)
         log.append(dict(epoch=ep, **{f'tr_{k}': v for k, v in tr.items()},
                         val_mAP=r['mAP'], val_mAP50=r['mAP50'], secs=dt))
-        if r['mAP50'] > best:
+        if r['mAP50'] > best or ep == 0:
             best = r['mAP50']
             torch.save(dict(model=model.state_dict(), args=vars(args)),
                        os.path.join(out_dir, 'best.pt'))
