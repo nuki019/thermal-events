@@ -38,6 +38,20 @@ class SeqStore:
             self._boxes = json.load(open(os.path.join(self.dir, 'boxes.json')))
         return self._boxes
 
+    def voxel(self, fi, bins, fps):
+        """Voxel grid for frame fi, memory-mapped from precomputed disk file
+        (zero RAM). Falls back to on-the-fly computation if missing."""
+        p = os.path.join(self.dir, f'voxel{bins}.npy')
+        if os.path.exists(p):
+            if not hasattr(self, '_vox_mmap'):
+                self._vox_mmap = np.load(p, mmap_mode='r')
+            # return a compact float32 copy (freed after use by the caller)
+            return np.array(self._vox_mmap[fi], dtype=np.float32)
+        H, W = self.meta['scene']['height'], self.meta['scene']['width']
+        ev = self.events
+        t1 = fi / fps; t0 = t1 - 1.0 / fps
+        return np.clip(voxel_grid(ev, H, W, bins, t0, t1), -3, 3) / 3.0
+
 
 class StedDataset(Dataset):
     """Per-frame samples. channel: 'frame' | 'event' | 'fusion'.
@@ -73,10 +87,7 @@ class StedDataset(Dataset):
         return len(self.index)
 
     def _voxel(self, st, fi):
-        t1 = fi / self.fps
-        t0 = t1 - 1.0 / self.fps
-        v = voxel_grid(st.events, self.H, self.W, self.bins, t0, t1)
-        return np.clip(v, -3, 3) / 3.0
+        return st.voxel(fi, self.bins, self.fps)
 
     def __getitem__(self, i):
         si, fi = self.index[i]
@@ -135,10 +146,7 @@ class StedChunkDataset(Dataset):
         return len(self.index)
 
     def _voxel(self, st, fi):
-        t1 = fi / self.fps
-        t0 = t1 - 1.0 / self.fps
-        v = voxel_grid(st.events, self.H, self.W, self.bins, t0, t1)
-        return np.clip(v, -3, 3) / 3.0
+        return st.voxel(fi, self.bins, self.fps)
 
     def _frame_x(self, st, fi):
         if self.channel == 'frame':

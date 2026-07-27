@@ -68,6 +68,7 @@ def evaluate_seq(model, loader, device, stride=4, thresh=0.2):
 def run_epoch(model, loader, opt, scaler, device, train=True, stride=4):
     tot = {'loss': 0.0, 'hm': 0.0, 'wh': 0.0, 'off': 0.0, 'n': 0}
     model.train() if train else model.eval()
+    import gc
     for xs, boxes_list, _, _ in loader:
         xs = xs.to(device, non_blocking=True)
         B = xs.shape[0]
@@ -90,6 +91,8 @@ def run_epoch(model, loader, opt, scaler, device, train=True, stride=4):
             scaler.update()
         tot['loss'] += float(loss) * B; tot['hm'] += float(l_hm) * B
         tot['wh'] += float(l_wh) * B; tot['off'] += float(l_off) * B; tot['n'] += B
+        del xs
+    gc.collect()
     return {k: v / max(tot['n'], 1) for k, v in tot.items() if k != 'n'}
 
 
@@ -117,7 +120,7 @@ def main():
     ap.add_argument('--data', default=r'D:/event-camera/DARPA FENCE/data/sted')
     ap.add_argument('--channel', default='event', choices=['frame', 'event', 'fusion'])
     ap.add_argument('--recurrent', action='store_true')
-    ap.add_argument('--epochs', type=int, default=10)
+    ap.add_argument('--epochs', type=int, default=16)
     ap.add_argument('--bs', type=int, default=8)
     ap.add_argument('--width', type=int, default=32)
     ap.add_argument('--lr', type=float, default=3e-4)
@@ -175,6 +178,7 @@ def main():
               f'| val mAP {r["mAP"]:.4f} mAP50 {r["mAP50"]:.4f} | {dt:.0f}s', flush=True)
         log.append(dict(epoch=ep, **{f'tr_{k}': v for k, v in tr.items()},
                         val_mAP=r['mAP'], val_mAP50=r['mAP50'], secs=dt))
+        json.dump(log, open(os.path.join(out_dir, 'log.json'), 'w'), indent=1)
         if r['mAP50'] > best or ep == 0:
             best = r['mAP50']
             torch.save(dict(model=model.state_dict(), args=vars(args)),
